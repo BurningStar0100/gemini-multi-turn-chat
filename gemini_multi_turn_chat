@@ -1,0 +1,79 @@
+import google.generativeai as genai
+import os
+from dotenv import load_dotenv
+
+# Load variables from .env file
+load_dotenv()
+
+def get_float_input(prompt_text, min_val=None, max_val=None):
+    while True:
+        try:
+            value = float(input(prompt_text).strip())
+            if min_val is not None and value < min_val:
+                print(f"Value must be >= {min_val}")
+                continue
+            if max_val is not None and value > max_val:
+                print(f"Value must be <= {max_val}")
+                continue
+            return value
+        except ValueError:
+            print("Invalid input. Please enter a valid floating point number.")
+
+def get_int_input(prompt_text, min_val=None, max_val=None):
+    while True:
+        try:
+            value = int(input(prompt_text).strip())
+            if min_val is not None and value < min_val:
+                print(f"Value must be >= {min_val}")
+                continue
+            if max_val is not None and value > max_val:
+                print(f"Value must be <= {max_val}")
+                continue
+            return value
+        except ValueError:
+            print("Invalid input. Please enter a valid integer.")
+
+def main():
+    # Prompt user for their API key
+    api_key = os.getenv("GEMINI_API_KEY")
+
+    # Configure the API
+    genai.configure(api_key=api_key)
+
+    print("\nSet model parameters:")
+    temperature = get_float_input("Temperature [0.0 - 2.0]: ", 0.0, 2.0)
+    top_p = get_float_input("Top-p [0.0 - 1.0]: ", 0.0, 1.0)
+    max_tokens = get_int_input("Max output tokens (e.g., 50 - 2048): ", 1, 4096)
+    frequency_penalty = get_float_input("Frequency penalty [-2.0 - 2.0): ", -2.0, 2.0)
+    presence_penalty = get_float_input("Presence penalty [2.0 - 2.0): ", -2.0, 2.0)
+
+    # Initialize the model
+    model = genai.GenerativeModel(
+        model_name="gemini-1.5-flash",
+        generation_config={
+            "temperature": temperature,
+            "top_p": top_p,
+            "max_output_tokens": max_tokens,
+            "frequency_penalty": frequency_penalty,
+            "presence_penalty": presence_penalty,
+        }
+    )
+
+    # Start a chat session
+    chat = model.start_chat()
+
+    print("\nGemini Chat Initialized. Type 'exit' to stop the conversation.\n")
+
+    turn = 1
+    while True:
+        user_input = input(f"You (Turn {turn}): ").strip()
+        if user_input.lower() in ['exit', 'quit']:
+            print("Ending conversation.")
+            break
+
+        response = chat.send_message(user_input)
+        print(f"\nGemini: {response.text}\n")
+        turn += 1
+
+if __name__ == "__main__":
+    main()
